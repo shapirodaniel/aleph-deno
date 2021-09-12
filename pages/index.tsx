@@ -1,41 +1,88 @@
-import { useDeno } from 'aleph/react'
-import React from 'react'
-import Logo from '~/components/logo.tsx'
-import useCounter from '~/lib/useCounter.ts'
+import { useDeno } from "aleph/react";
+import React, { useRef } from "react";
+import FFmpeg from "../ffmpeg-deno-port/src/index.js";
+
+type Target = {
+  files: Array<File>;
+};
+
+type PartialContext = {
+  target: Target;
+};
 
 export default function Home() {
-  const [count, isSyncing, increase, decrease] = useCounter()
-  const version = useDeno(() => Deno.version.deno)
+  const messageRef = useRef(null);
+  const outputVideoRef = useRef(null);
+  const uploaderRef = useRef(null);
+
+  const run_ffmpeg = () => {
+    const ffmpeg = FFmpeg.createFFmpeg();
+
+    const transcode = async ({ target: { files } }: PartialContext) => {
+      await ffmpeg.load();
+
+      const inputPaths = [];
+
+      for (const file of files) {
+        const { name } = file;
+        ffmpeg.FS("writeFile", name, await FFmpeg.fetchFile(file));
+        inputPaths.push(`file ${name}`);
+      }
+
+      ffmpeg.FS("writeFile", "concat_list.txt", inputPaths.join("\n"));
+
+      await ffmpeg.run(
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        "concat_list.txt",
+        "output.mp4"
+      );
+
+      const data = ffmpeg.FS("readFile", "output.mp4");
+
+      const video = outputVideoRef.current as any;
+
+      video.src = URL.createObjectURL(
+        new Blob([data.buffer], {
+          type: "video/mp4",
+        })
+      );
+    };
+
+    const elm = uploaderRef.current as any;
+
+    elm.addEventListener("change", transcode);
+  };
 
   return (
-    <div className="page">
+    <html>
       <head>
-        <title>Hello World - Aleph.js</title>
-        <link rel="stylesheet" href="../style/index.css" />
+        <style>
+          {`html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }`}
+        </style>
       </head>
-      <p className="logo"><Logo /></p>
-      <h1>Welcome to use <strong>Aleph.js</strong>!</h1>
-      <p className="links">
-        <a href="https://alephjs.org" target="_blank">Website</a>
-        <span></span>
-        <a href="https://alephjs.org/docs/get-started" target="_blank">Get Started</a>
-        <span></span>
-        <a href="https://alephjs.org/docs" target="_blank">Docs</a>
-        <span></span>
-        <a href="https://github.com/alephjs/aleph.js" target="_blank">Github</a>
-      </p>
-      <div className="counter">
-        <span>Counter:</span>
-        {isSyncing && (
-          <em>...</em>
-        )}
-        {!isSyncing && (
-          <strong>{count}</strong>
-        )}
-        <button onClick={decrease}>-</button>
-        <button onClick={increase}>+</button>
-      </div>
-      <p className="copyinfo">Built by Aleph.js in Deno {version}</p>
-    </div>
-  )
+
+      <body>
+        <h3>Select multiple video files to Concatenate</h3>
+        <video ref={outputVideoRef} controls></video>
+        <br />
+        <input ref={uploaderRef} type="file" id="uploader" multiple />
+        <p ref={messageRef}></p>
+      </body>
+    </html>
+  );
 }
