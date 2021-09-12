@@ -1,5 +1,5 @@
 import createFFmpeg from "./createFFmpeg.js";
-import { fetchFile } from "./node/fetchFile.ts";
+import fileLoader from "./node/fetchFile.ts";
 
 export default {
   /*
@@ -31,5 +31,5 @@ export default {
    * Uint8Array variable for ffmpeg.wasm to consume.
    *
    */
-  fetchFile,
+  fetchFile: fileLoader.fetchFile,
 };

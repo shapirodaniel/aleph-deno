@@ -1,8 +1,8 @@
-import { defaultArgs } from "./config.js";
+import Config from "./config.js";
 
 // note: note shorthand of accessing <dir>/index.js does not work in Deno
 // must provide explicit path to index.js
-import { parseArgs } from "./utils/index.js";
+import Parser from "./utils/index.js";
 
 const NO_LOAD = Error(
   "ffmpeg.wasm is not ready, make sure you have completed load()."
@@ -55,8 +55,10 @@ export default () => {
     running = true;
 
     return new Promise((resolve) => {
-      const cliArgs = [...defaultArgs, ..._args].filter((s) => s.length !== 0);
-      resolve(ffmpeg(...parseArgs(Core, cliArgs)));
+      const cliArgs = [...Config.defaultArgs, ..._args].filter(
+        (s) => s.length !== 0
+      );
+      resolve(ffmpeg(...Parser.parseArgs(Core, cliArgs)));
     });
   };
 
