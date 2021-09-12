@@ -15,7 +15,7 @@ export default () => {
 
   const load = async () => {
     if (!Core) {
-      Core = await WebAssembly.instantiate("./ffmpeg-core.wasm");
+      // define Core here
 
       ffmpeg = Core.cwrap("proxy_main", "number", ["number", "number"]);
     } else {
