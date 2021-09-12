@@ -76,7 +76,7 @@ export default function Home() {
         </style>
       </head>
 
-      <body>
+      <body onLoad={run_ffmpeg}>
         <h3>Select multiple video files to Concatenate</h3>
         <video ref={outputVideoRef} controls></video>
         <br />
